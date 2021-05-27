@@ -13,7 +13,7 @@ defmodule TaskBunny.SupervisorTest do
     :meck.new(Config, [:passthrough])
     :meck.expect(Config, :hosts, fn -> [@host] end)
     :meck.expect(Config, :connect_options, fn @host -> "amqp://localhost" end)
-    :meck.expect(Config, :workers, fn(_any) -> [worker] end)
+    :meck.expect(Config, :workers, fn _any -> [worker] end)
   end
 
   defp wait_for_process_died(pid) do
@@ -72,7 +72,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Close the connection
       conn = Connection.get_connection!(@host)
-      AMQP.Connection.close(conn)
+      :ok = AMQP.Connection.close(conn)
       wait_for_process_died(conn_pid)
       JobTestHelper.wait_for_connection(@host)
 
