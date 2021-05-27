@@ -35,4 +35,9 @@ config :task_bunny,
     ]
   ]
 
+config :lager,
+  crash_log: false,
+  error_logger_redirect: false,
+  handlers: [level: :critical]
+
 import_config "#{Mix.env()}.exs"

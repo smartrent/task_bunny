@@ -15,13 +15,18 @@ defmodule TaskBunny.Supervisor do
 
   @doc false
   @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor, ps_name \\ :publisher, options \\ []) do
+  def start_link(
+        name \\ __MODULE__,
+        wsv_name \\ WorkerSupervisor,
+        ps_name \\ :publisher,
+        options \\ []
+      ) do
     Supervisor.start_link(__MODULE__, [wsv_name, ps_name, options], name: name)
   end
 
   @doc false
   @spec init(list()) ::
-          {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}}
+          {:ok, {:supervisor.sup_flags(), [Supervisor.child_spec()]}}
           | :ignore
   def init([wsv_name, ps_name, options]) do
     # Add Connection severs for each hosts
@@ -29,7 +34,7 @@ defmodule TaskBunny.Supervisor do
       Enum.map(
         Config.hosts(),
         fn host ->
-          worker(Connection, [host], id: make_ref())
+          %{id: "task_bunny.supervisor.#{host}", start: {Connection, :start_link, [host]}}
         end
       )
 
@@ -38,14 +43,15 @@ defmodule TaskBunny.Supervisor do
     children =
       case Initializer.alive?() do
         true -> connections ++ publisher
-        false -> connections ++ publisher ++ [worker(Initializer, [false])]
+        false -> connections ++ publisher ++ [{Initializer, false}]
       end
 
     # Define workers and child supervisors to be supervised
     children =
       case {Config.auto_start?(), Config.disable_worker?()} do
         {true, false} ->
-          children ++ [supervisor(WorkerSupervisor, [wsv_name, options])]
+          children ++
+            [%{id: WorkerSupervisor, start: {WorkerSupervisor, :start_link, [wsv_name, options]}}]
 
         {true, true} ->
           # Only connections
@@ -55,7 +61,7 @@ defmodule TaskBunny.Supervisor do
           []
       end
 
-    supervise(children, strategy: :one_for_all)
+    Supervisor.init(children, strategy: :one_for_all)
   end
 
   defp publisher_config(name) do
