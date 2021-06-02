@@ -96,7 +96,7 @@ defmodule TaskBunny.Worker do
     Logger.info(log_msg("terminating", state))
 
     if state.channel do
-      AMQP.Channel.close(state.channel)
+      :ok = AMQP.Channel.close(state.channel)
     end
 
     :normal
@@ -289,9 +289,7 @@ defmodule TaskBunny.Worker do
 
   defp log_msg(message, state, additional \\ nil) do
     message =
-      "TaskBunny.Worker: #{message}. Queue: #{state.queue}. Concurrency: #{state.concurrency}. PID: #{
-        inspect(self())
-      }."
+      "TaskBunny.Worker: #{message}. Queue: #{state.queue}. Concurrency: #{state.concurrency}. PID: #{inspect(self())}."
 
     if additional do
       "#{message} #{inspect(additional)}"

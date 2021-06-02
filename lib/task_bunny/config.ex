@@ -98,26 +98,23 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Get workers for the application to run by queue namespace.
+  Get workers for the application to run.
   """
-  def workers([queues: [namespace: namespace]]) do
-    Enum.filter(workers(), fn(worker) ->
+  # Get workers for the application to run by queue namespace.
+  def workers(queues: [namespace: namespace]) do
+    Enum.filter(workers(), fn worker ->
       worker[:queue] =~ namespace
     end)
   end
 
-  @doc """
-  Get workers for the application to run by queue names.
-  """
-  def workers([queues: queues]) when is_list(queues) do
-    Enum.filter(workers(), fn(worker) ->
+  # Get workers for the application to run by queue names.
+  def workers(queues: queues) when is_list(queues) do
+    Enum.filter(workers(), fn worker ->
       Enum.member?(queues, worker[:queue])
     end)
   end
 
-  @doc """
-  Get all workers for the application if the queue options are empty.
-  """
+  # Get all workers for the application if the queue options are empty.
   def workers([]) do
     workers()
   end

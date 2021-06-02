@@ -9,17 +9,14 @@ defmodule TaskBunny do
 
   @spec start(atom, term) :: {:ok, pid} | {:ok, pid, any} | {:error, term}
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-
     register_metrics()
 
     # Define workers and child supervisors to be supervised
     children = [
-      supervisor(TaskBunny.Supervisor, [])
+      %{id: TaskBunny.Supervisor, start: {TaskBunny.Supervisor, :start_link, []}}
     ]
 
-    opts = [strategy: :one_for_one, name: TaskBunny]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, strategy: :one_for_one, name: TaskBunny)
   end
 
   defp register_metrics do
