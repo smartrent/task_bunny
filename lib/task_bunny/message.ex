@@ -144,4 +144,18 @@ defmodule TaskBunny.Message do
     |> Jason.decode!()
     |> failed_count()
   end
+
+  @spec enqueued_at(headers :: AMQP.arguments()) :: DateTime.t() | nil
+  def enqueued_at(headers) do
+    Enum.find_value(headers, fn
+      {"x-enqueued-at", :binary, value} when is_binary(value) ->
+        case DateTime.from_iso8601(value) do
+          {:ok, parsed, _offset} -> parsed
+          {:error, _} -> nil
+        end
+
+      _ ->
+        nil
+    end)
+  end
 end

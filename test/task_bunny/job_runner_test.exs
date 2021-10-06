@@ -56,34 +56,34 @@ defmodule TaskBunny.JobRunnerTest do
     test "runs the job and notifies when it has finished" do
       payload = %{hello: "world"}
       message = message(SampleJobs.NormalJob, payload, %{a: "b"})
-      JobRunner.invoke(SampleJobs.NormalJob, payload, message)
+      JobRunner.invoke(%{"job" => SampleJobs.NormalJob, "payload" => payload}, message)
 
       assert_receive {:job_finished, :ok, ^message}
     end
 
     test "invokes perform method with the given payload" do
       payload = %{hello: "world"}
-      JobRunner.invoke(SampleJobs.PayloadJob, payload, nil)
+      JobRunner.invoke(%{"job" => SampleJobs.PayloadJob, "payload" => payload}, {"", %{}})
 
-      assert_receive {:job_finished, {:ok, ^payload}, nil}
+      assert_receive {:job_finished, {:ok, ^payload}, _}
     end
 
     test "handles job error" do
-      JobRunner.invoke(SampleJobs.ErrorJob, nil, nil)
+      JobRunner.invoke(%{"job" => SampleJobs.ErrorJob, "payload" => nil}, {"", %{}})
 
-      assert_receive {:job_finished, {:error, %{return_value: {:error, "failed!"}}}, nil}
+      assert_receive {:job_finished, {:error, %{return_value: {:error, "failed!"}}}, _}
     end
 
     test "handles job crashing" do
-      JobRunner.invoke(SampleJobs.CrashJob, nil, nil)
+      JobRunner.invoke(%{"job" => SampleJobs.CrashJob, "payload" => nil}, {"", %{}})
 
-      assert_receive {:job_finished, {:error, _}, nil}
+      assert_receive {:job_finished, {:error, _}, _}
     end
 
     test "handles timed-out job" do
-      JobRunner.invoke(SampleJobs.TimeoutJob, nil, nil)
+      JobRunner.invoke(%{"job" => SampleJobs.TimeoutJob, "payload" => nil}, {"", %{}})
 
-      assert_receive {:job_finished, {:error, _}, nil}, 1000
+      assert_receive {:job_finished, {:error, _}, _}, 1000
     end
   end
 end

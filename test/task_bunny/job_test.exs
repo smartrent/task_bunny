@@ -22,9 +22,12 @@ defmodule TaskBunny.JobTest do
       payload = %{"foo" => "bar"}
       :ok = TestJob.enqueue(payload, queue: @queue)
 
-      {received, _} = QueueTestHelper.pop(@queue)
+      {received, meta} = QueueTestHelper.pop(@queue)
       {:ok, %{"payload" => received_payload}} = Message.decode(received)
       assert received_payload == payload
+      assert is_list(meta.headers)
+
+      assert %DateTime{} = Message.enqueued_at(meta.headers)
     end
 
     test "returns an error for wrong option" do
