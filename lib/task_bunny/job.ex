@@ -88,6 +88,23 @@ defmodule TaskBunny.Job do
   @callback perform(any) :: :ok | {:ok, any} | {:error, term}
 
   @doc """
+  Callback to process a job with additional options.
+
+  It can take any type of argument as long as it can be serialized with Jason,
+  but we recommend you to use map with string keys for a consistency.
+
+      def perform(name, opts) do
+        IO.puts name <> ", it's not a preferred way " <> inspect(opts)
+      end
+
+      def perform(%{"name" => name}, opts) do
+        IO.puts name <> ", it's a preferred way :)" <> inspect(opts)
+      end
+
+  """
+  @callback perform(any, map) :: :ok | {:ok, any} | {:error, term}
+
+  @doc """
   Callback executed when a process gets rejected.
 
   It receives in input the whole error trace structure plus the orginal payload for inspection and recovery actions.
@@ -166,7 +183,11 @@ defmodule TaskBunny.Job do
       @spec on_reject(any) :: :ok
       def on_reject(_body), do: :ok
 
-      defoverridable timeout: 0, max_retry: 0, retry_interval: 1, on_reject: 1
+      @doc false
+      @spec perform(any, map()) :: :ok | {:ok, any} | {:error, term}
+      def perform(payload, _opts), do: perform(payload)
+
+      defoverridable timeout: 0, max_retry: 0, retry_interval: 1, on_reject: 1, perform: 2
     end
   end
 
@@ -211,16 +232,24 @@ defmodule TaskBunny.Job do
 
   @spec do_enqueue(atom, String.t(), String.t(), nil | integer) :: :ok
   defp do_enqueue(host, queue, message, nil) do
-    Publisher.publish!(host, queue, message)
+    Publisher.publish!(host, queue, message, enqueue_options())
   end
 
   defp do_enqueue(host, queue, message, delay) do
     scheduled = Queue.scheduled_queue(queue)
 
-    options = [
-      expiration: "#{delay}"
-    ]
+    options =
+      [
+        expiration: "#{delay}"
+      ] ++ enqueue_options()
 
     Publisher.publish!(host, scheduled, message, options)
   end
+
+  defp enqueue_options,
+    do: [
+      headers: [
+        {"x-enqueued-at", :binary, DateTime.utc_now() |> DateTime.to_iso8601()}
+      ]
+    ]
 end

@@ -23,6 +23,7 @@ defmodule TaskBunny.JobRunner do
 
   require Logger
   alias TaskBunny.JobError
+  alias TaskBunny.Message
 
   @doc ~S"""
   Invokes the given job with the given payload.
@@ -30,9 +31,19 @@ defmodule TaskBunny.JobRunner do
   The job is run in a seperate process, which is killed after the job.timeout if the job has not finished yet.
   A :error message is send to the :job_finished of the caller if the job times out.
   """
-  @spec invoke(atom, any, {any, any}) :: {:ok | :error, any}
-  def invoke(job, payload, message) do
+  @spec invoke(map(), {any, any}) :: {:ok | :error, any}
+  def invoke(decoded, {_body, meta} = message) do
     caller = self()
+
+    job = decoded["job"]
+    payload = decoded["payload"]
+    headers = Map.get(meta, :headers, [])
+
+    meta =
+      Map.merge(meta, %{
+        failures: Message.failed_count(decoded),
+        enqueued_at: Message.enqueued_at(headers)
+      })
 
     timeout_error = {:error, JobError.handle_timeout(job, payload)}
 
@@ -45,7 +56,7 @@ defmodule TaskBunny.JobRunner do
 
     pid =
       spawn(fn ->
-        send(caller, {:job_finished, run_job(job, payload), message})
+        send(caller, {:job_finished, run_job(job, payload, meta), message})
         Process.cancel_timer(timer)
       end)
 
@@ -54,9 +65,9 @@ defmodule TaskBunny.JobRunner do
 
   # Performs a job with the given payload.
   # Any raises or throws in the perform are caught and turned into an :error tuple.
-  @spec run_job(atom, any) :: :ok | {:ok, any} | {:error, any}
-  defp run_job(job, payload) do
-    case job.perform(payload) do
+  @spec run_job(atom, any, any) :: :ok | {:ok, any} | {:error, any}
+  defp run_job(job, payload, meta) do
+    case job.perform(payload, meta) do
       :ok -> :ok
       {:ok, something} -> {:ok, something}
       error -> {:error, JobError.handle_return_value(job, payload, error)}

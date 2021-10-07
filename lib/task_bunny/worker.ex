@@ -152,7 +152,7 @@ defmodule TaskBunny.Worker do
       {:ok, decoded} ->
         Logger.debug(log_msg("basic_deliver", state, body: body))
 
-        JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
+        JobRunner.invoke(decoded, {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
 
