@@ -145,7 +145,10 @@ defmodule TaskBunny.Message do
     |> failed_count()
   end
 
-  @spec enqueued_at(headers :: AMQP.arguments()) :: DateTime.t() | nil
+  @spec enqueued_at(headers :: AMQP.arguments() | :undefined | nil) :: DateTime.t() | nil
+  def enqueued_at(:undefined), do: nil
+  def enqueued_at(nil), do: nil
+
   def enqueued_at(headers) do
     Enum.find_value(headers, fn
       {"x-enqueued-at", :binary, value} when is_binary(value) ->
