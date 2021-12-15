@@ -76,7 +76,7 @@ defmodule TaskBunny.Worker do
   @doc false
   @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
-    Logger.info(log_msg("initializing", state))
+    Logger.debug(log_msg("initializing", state))
 
     case Connection.subscribe_connection(state.host, self()) do
       :ok ->
@@ -137,7 +137,7 @@ defmodule TaskBunny.Worker do
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do
       {:ok, channel, consumer_tag} ->
-        Logger.info(log_msg("start consuming", state))
+        Logger.debug(log_msg("start consuming", state))
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
 
       {:error, error} ->
