@@ -51,7 +51,7 @@ defmodule TaskBunny.Connection do
   def start_link(host)
 
   def start_link(state = {host, _, _}) do
-    Logger.info("TaskBunny.Connection: start_link with #{host}")
+    Logger.debug("TaskBunny.Connection: start_link with #{host}")
 
     GenServer.start_link(__MODULE__, state, name: pname(host))
   end
@@ -183,7 +183,7 @@ defmodule TaskBunny.Connection do
   def handle_info(:connect, {host, _, listeners}) do
     case do_connect(host) do
       {:ok, connection} ->
-        Logger.info("TaskBunny.Connection: connected to #{host}")
+        Logger.debug("TaskBunny.Connection: connected to #{host}")
         Process.monitor(connection.pid)
         publish_connection(connection, listeners)
 
