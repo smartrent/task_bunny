@@ -26,7 +26,7 @@ defmodule TaskBunny.Mixfile do
         extras: ["README.md"],
         main: "readme",
         source_ref: "v#{@version}",
-        source_url: "https://github.com/shinyscorpion/task_bunny"
+        source_url: "https://github.com/smartrent/task_bunny"
       ],
       description: @description,
       package: package(),
@@ -37,6 +37,7 @@ defmodule TaskBunny.Mixfile do
   defp package do
     [
       name: :task_bunny,
+      organization: "smartrent",
       files: [
         # Project files
         "mix.exs",
@@ -59,7 +60,7 @@ defmodule TaskBunny.Mixfile do
         "Tatsuya Ono"
       ],
       licenses: ["MIT"],
-      links: %{"Github" => "https://github.com/shinyscorpion/task_bunny"}
+      links: %{"Github" => "https://github.com/smartrent/task_bunny"}
     ]
   end
 
