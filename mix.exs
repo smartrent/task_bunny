@@ -15,12 +15,6 @@ defmodule TaskBunny.Mixfile do
       deps: deps(),
       name: "TaskBunny",
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
       dialyzer: [ignore_warnings: "dialyzer.ignore-warnings"],
       docs: [
         extras: ["README.md"],
@@ -71,6 +65,17 @@ defmodule TaskBunny.Mixfile do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
+    ]
+  end
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -81,12 +86,11 @@ defmodule TaskBunny.Mixfile do
       {:poolboy, "~> 1.5"},
 
       # dev/test
-      {:credo, "~> 1.5.5", only: [:dev]},
+      {:credo, "~> 1.5", only: [:dev]},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.24", only: :dev},
       {:excoveralls, "~> 0.14", only: :test},
       {:inch_ex, "~> 2.0", only: [:dev, :test]},
-      {:logger_file_backend, "~> 0.0.11", only: :test},
       {:meck, "~> 0.8", only: :test}
     ]
   end

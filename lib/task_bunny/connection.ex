@@ -160,7 +160,7 @@ defmodule TaskBunny.Connection do
     {:ok, state}
   end
 
-  @spec handle_call(atom, {pid, term}, state) :: {:reply, %AMQP.Connection{}, state}
+  @spec handle_call(atom, {pid, term}, state) :: {:reply, AMQP.Connection.t(), state}
   def handle_call(:get_connection, _, state = {_, connection, _}) do
     {:reply, connection, state}
   end
@@ -190,7 +190,7 @@ defmodule TaskBunny.Connection do
         {:noreply, {host, connection, []}}
 
       error ->
-        Logger.warn(
+        Logger.warning(
           "TaskBunny.Connection: failed to connect to #{host} - Error: #{inspect(error)}. Retrying in #{@reconnect_interval} ms"
         )
 
@@ -201,7 +201,7 @@ defmodule TaskBunny.Connection do
   end
 
   def handle_info({:DOWN, _, :process, _pid, reason}, {host, _, _}) do
-    Logger.warn("TaskBunny.Connection: disconnected from #{host} - PID: #{inspect(self())}")
+    Logger.warning("TaskBunny.Connection: disconnected from #{host} - PID: #{inspect(self())}")
 
     {:stop, {:connection_lost, reason}, {host, nil, []}}
   end
@@ -215,7 +215,7 @@ defmodule TaskBunny.Connection do
     :ok
   end
 
-  @spec do_connect(atom) :: {:ok, %AMQP.Connection{}} | {:error, any}
+  @spec do_connect(atom) :: {:ok, AMQP.Connection.t()} | {:error, any}
   defp do_connect(host) do
     AMQP.Connection.open(Config.connect_options(host))
   rescue

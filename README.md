@@ -465,7 +465,7 @@ children = [
           [queues: [namespace: "my-name-space"]] # empty list will start all queues in configs, you can also name queues specifically: [queues: ["my-name-space.my-queue.name"]]
         ]
       )
-      # ... anything else. (i.e. Ecto.Repo, etc) 
+      # ... anything else. (i.e. Ecto.Repo, etc)
     ]
     Supervisor.start_link(children, [strategy: :one_for_one, name: MyApp.Supervisor])
 ```
@@ -541,6 +541,14 @@ TaskBunny automatically integrates with [Wobserver](https://github.com/shinyscor
 All worker and connection information will be added as a page on the web interface.
 The current amount of job runners and job success, failure, and reject totals are added to the `/metrics` endpoint.
 
+## Testing
+
+A RabbitMQ server is required in order to run the unit tests. To start one using
+Docker, the following should be sufficient:
+
+```shell
+docker run --rm -p 5672:5672 rabbitmq:3-management
+```
 
 ## Copyright and License
 

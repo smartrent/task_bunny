@@ -47,11 +47,13 @@ defmodule TaskBunny.JobRunner do
 
     timeout_error = {:error, JobError.handle_timeout(job, payload)}
 
+    timeout = job.timeout()
+
     timer =
       Process.send_after(
         caller,
         {:job_finished, timeout_error, message},
-        job.timeout
+        timeout
       )
 
     pid =
@@ -60,7 +62,7 @@ defmodule TaskBunny.JobRunner do
         Process.cancel_timer(timer)
       end)
 
-    :timer.kill_after(job.timeout + 10, pid)
+    :timer.kill_after(timeout + 10, pid)
   end
 
   # Performs a job with the given payload.
