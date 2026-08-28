@@ -29,6 +29,7 @@ defmodule TaskBunny.Worker do
           host: atom,
           concurrency: integer,
           store_rejected_jobs: boolean,
+          queue_type: atom | nil,
           channel: AMQP.Channel.t() | nil,
           consumer_tag: String.t() | nil,
           runners: integer,
@@ -43,6 +44,7 @@ defmodule TaskBunny.Worker do
             host: :default,
             concurrency: 1,
             store_rejected_jobs: true,
+            queue_type: nil,
             channel: nil,
             consumer_tag: nil,
             runners: 0,
@@ -60,7 +62,8 @@ defmodule TaskBunny.Worker do
       host: config[:host] || :default,
       queue: config[:queue],
       concurrency: config[:concurrency],
-      store_rejected_jobs: Keyword.get(config, :store_rejected_jobs, true)
+      store_rejected_jobs: Keyword.get(config, :store_rejected_jobs, true),
+      queue_type: config[:queue_type]
     }
     |> start_link()
   end
@@ -132,7 +135,7 @@ defmodule TaskBunny.Worker do
   # Start consumer loop
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
-    Queue.declare_with_subqueues(state.host, state.queue)
+    Queue.declare_with_subqueues(state.host, state.queue, queue_type: state.queue_type)
 
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do

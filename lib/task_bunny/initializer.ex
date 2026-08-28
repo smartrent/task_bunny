@@ -82,11 +82,12 @@ defmodule TaskBunny.Initializer do
   defp declare_queue(queue_config) do
     queue = queue_config[:name]
     host = queue_config[:host] || :default
+    queue_type = queue_config[:queue_type]
 
     TaskBunny.Connection.subscribe_connection(host, self())
 
     receive do
-      {:connected, conn} -> declare_queue(conn, queue)
+      {:connected, conn} -> declare_queue(conn, queue, queue_type)
     after
       2_000 ->
         Logger.warning("""
@@ -98,9 +99,9 @@ defmodule TaskBunny.Initializer do
     :ok
   end
 
-  @spec declare_queue(AMQP.Connection.t(), String.t()) :: :ok
-  defp declare_queue(conn, queue) do
-    Queue.declare_with_subqueues(conn, queue)
+  @spec declare_queue(AMQP.Connection.t(), String.t(), atom | nil) :: :ok
+  defp declare_queue(conn, queue, queue_type) do
+    Queue.declare_with_subqueues(conn, queue, queue_type: queue_type)
     :ok
   catch
     :exit, e ->

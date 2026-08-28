@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+
+* Add opt-in `queue_type:` option per queue config (e.g. `queue_type: :quorum`) to declare `x-queue-type` explicitly instead of relying on the broker's `default_queue_type` resolution. Defaults to `nil` (unchanged behavior — no explicit type). See [TECH-9393](https://smartrent.atlassian.net/browse/TECH-9393): on RabbitMQ 3.13.x, a broken vhost-metadata fallback path means type-less declares always resolve to `classic` regardless of node config, which silently broke `TaskBunny.Worker`'s consumer reconnect after an out-of-band migration to quorum queues.
+
 ## 0.3.4
 
 * Managing publisher connections with poolboy. [#65](https://github.com/shinyscorpion/task_bunny/pull/65).
