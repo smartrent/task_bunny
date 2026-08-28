@@ -25,40 +25,53 @@ defmodule TaskBunny.Queue do
   - normal_jobs.retry: a queue that holds jobs failed and waiting to retry
   - normal_jobs.rejected: a queue that holds jobs failed and won't be retried
 
+  Pass `queue_type: :quorum` (or `:classic`) to declare all four queues with
+  an explicit `x-queue-type` argument instead of leaving it unset. Defaults
+  to `nil`, which preserves prior behavior exactly (no explicit type — the
+  broker's own default-queue-type resolution decides).
   """
-  @spec declare_with_subqueues(AMQP.Connection.t() | atom, String.t()) :: {map, map, map, map}
-  def declare_with_subqueues(host, work_queue) when is_atom(host) do
+  @spec declare_with_subqueues(AMQP.Connection.t() | atom, String.t(), keyword) ::
+          {map, map, map, map}
+  def declare_with_subqueues(host_or_connection, work_queue, opts \\ [])
+
+  def declare_with_subqueues(host, work_queue, opts) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
-    declare_with_subqueues(conn, work_queue)
+    declare_with_subqueues(conn, work_queue, opts)
   end
 
-  def declare_with_subqueues(connection, work_queue) do
+  def declare_with_subqueues(connection, work_queue, opts) when is_list(opts) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
     scheduled_queue = scheduled_queue(work_queue)
     retry_queue = retry_queue(work_queue)
     rejected_queue = rejected_queue(work_queue)
 
-    work = declare(channel, work_queue, durable: true)
-    rejected = declare(channel, rejected_queue, durable: true)
+    queue_type_args = queue_type_arguments(opts[:queue_type])
+
+    work = declare(channel, work_queue, durable: true, arguments: queue_type_args)
+    rejected = declare(channel, rejected_queue, durable: true, arguments: queue_type_args)
 
     # Set main queue as dead letter exchange of retry queue.
     # It will requeue the message once message TTL is over.
     retry_options = [
-      arguments: [
-        {"x-dead-letter-exchange", :longstr, ""},
-        {"x-dead-letter-routing-key", :longstr, work_queue}
-      ],
+      arguments:
+        queue_type_args ++
+          [
+            {"x-dead-letter-exchange", :longstr, ""},
+            {"x-dead-letter-routing-key", :longstr, work_queue}
+          ],
       durable: true
     ]
 
     retry = declare(channel, retry_queue, retry_options)
 
     scheduled_options = [
-      arguments: [
-        {"x-dead-letter-exchange", :longstr, ""},
-        {"x-dead-letter-routing-key", :longstr, work_queue}
-      ],
+      arguments:
+        queue_type_args ++
+          [
+            {"x-dead-letter-exchange", :longstr, ""},
+            {"x-dead-letter-routing-key", :longstr, work_queue}
+          ],
       durable: true
     ]
 
@@ -67,6 +80,14 @@ defmodule TaskBunny.Queue do
     :ok = AMQP.Channel.close(channel)
 
     {work, retry, rejected, scheduled}
+  end
+
+  # No explicit type requested — omit the argument entirely, exactly as
+  # before this option existed.
+  defp queue_type_arguments(nil), do: []
+
+  defp queue_type_arguments(queue_type) when queue_type in [:quorum, :classic, :stream] do
+    [{"x-queue-type", :longstr, Atom.to_string(queue_type)}]
   end
 
   @doc """

@@ -92,7 +92,8 @@ defmodule TaskBunny.Config do
         queue: queue[:name],
         concurrency: concurrency,
         store_rejected_jobs: store_rejected_jobs,
-        host: queue[:host] || :default
+        host: queue[:host] || :default,
+        queue_type: queue[:queue_type]
       ]
     end)
   end
